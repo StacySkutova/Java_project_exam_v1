@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
+<head>
+<meta charset="ISO-8859-1">
+<title>Personal English Vacabulary App</title>
+
+<link rel="stylesheet"
+	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+	integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+	crossorigin="anonymous">
+
+	<style>
+		body {
+			background-color: aquamarine;
+		}
+		h2 {
+			margin-bottom: 30px;
+			text-align: center;
+			font-family: fantasy;
+			font-size: 2.5rem;
+			color: green;
+		}
+		.input-field {
+			width: 80%;
+			margin-left: 100px;
+			display: grid;
+			grid-template-columns: 1fr 1fr 2fr 0.5fr;
+		}
+		input {
+			margin-right: 30px;
+			padding: 10px;
+			border-radius: 5px;
+		}
+		button{
+			background-color: green;
+			border-radius: 5px;
+			color: white;
+			font-weight: bold;
+		}
+		table {
+			width: 100%;
+			margin-bottom: 100px;
+			font-family: arial, sans-serif;
+		}
+		td, th {
+			border: 2px solid green;
+			text-align: center;
+			padding: 8px;
+		}
+		tr:nth-child(even) {
+			background-color: white;
+		}
+	</style>
+
+</head>
+<body>
+	<nav class="navbar navbar-inverse navbar-fixed-top">
+		<div class="container">
+			<div class="navbar-header">
+				<button type="button" class="navbar-toggle collapsed"
+					data-toggle="collapse" data-target="#navbar" aria-expanded="false"
+					aria-controls="navbar">
+					<span class="sr-only">Toggle navigation</span> <span
+						class="icon-bar"></span> <span class="icon-bar"></span> <span
+						class="icon-bar"></span>
+				</button>
+				<a class="navbar-brand" href="#" th:href="@{/}">Personal English Vocabulary</a>
+			</div>
+			<div id="navbar" class="collapse navbar-collapse">
+				<ul class="nav navbar-nav">
+					<li sec:authorize="isAuthenticated()"><a th:href="@{/logout}">Logout</a></li>
+				</ul>
+			</div>
+		</div>
+	</nav>
+
+	<br>
+	<br>
+
+	<div class="container">
+		<h2>Personal English vocabulary</h2>
+
+		<h3>Welcome <span sec:authentication="principal.username"> User</span></h3>
+
+		<table id="wordsList">
+
+		</table>
+		<form action="#">
+			<div class="input-field">
+				<input id="end_word" placeholder="English word">
+				<input id="rus_word" placeholder="Translation into Russian">
+				<input id="description" placeholder="Word usage (examples)">
+				<button onclick="createWord()">Add word</button>
+			</div>
+		</form>
+
+		<script>
+			function deleteWord(wordId) {
+
+				const xhttp = new XMLHttpRequest();
+				xhttp.open("DELETE", "http://localhost:8080/words/delete/" + wordId, true);
+				xhttp.send();
+
+				loadUsers();
+			}
+
+			function updateWord(wordId) {
+				const xhttp = new XMLHttpRequest();
+				xhttp.open("PUT", "http://localhost:8080/words/put/" + wordId, true);
+				xhttp.send();
+
+				loadUsers();
+			}
+
+			function createWord() {
+				loadUsers();
+
+				const engWord = document.getElementById("end_word").value;
+				const rusWord = document.getElementById("rus_word").value;
+				const wordDescription = document.getElementById("description").value;
+
+				const xmlhttp = new XMLHttpRequest();
+				xmlhttp.open("POST", "http://localhost:8080/words/save");
+				xmlhttp.setRequestHeader("Content-Type", "application/json");
+				xmlhttp.send(JSON.stringify({eng: engWord, rus: rusWord, description: wordDescription}));
+
+				loadUsers();
+			}
+
+			function loadUsers() {
+				const xhttp = new XMLHttpRequest();
+				xhttp.onreadystatechange = function () {
+					if (this.readyState == 4 && this.status == 200) {
+						const words = JSON.parse(this.responseText);
+						let html = '<tr>\n' +
+								'        <th>English word</th>\n' +
+								'        <th>Translation into Russian</th>\n' +
+								'        <th>Description</th>\n' +
+								'        <th>Actions</th>\n' +
+								'    </tr>';
+						for (let i = 0; i < words.length; i++) {
+							const word = words[i];
+							console.log(word);
+							html = html + '<tr><td>' + word.eng + '</td>\n' +
+									'        <td>' + word.rus + '</td>\n' +
+									'        <td>' + word.description + '</td>' +
+									'        <td><button onclick="updateWord(' + word.id + ')">Edit</button>   ' +
+									'            <button onclick="deleteWord(' + word.id + ')">Delete</button>' +
+									'</td></tr>';
+
+						}
+						document.getElementById("wordsList").innerHTML = html;
+					}
+				};
+				xhttp.open("GET", "http://localhost:8080/words/findAll", true);
+				xhttp.send();
+			}
+
+			loadUsers();
+		</script>
+	</div>
+</body>
+</html>
